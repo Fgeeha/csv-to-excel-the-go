@@ -1,26 +1,69 @@
 package main
 
 import (
-	"bufio"
 	"encoding/csv"
 	"fmt"
 	"os"
 	"strings"
 
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 	"github.com/xuri/excelize/v2"
 )
 
 func main() {
-	// Запрашиваем путь к CSV файлу
-	fmt.Println("Введите путь к CSV файлу:")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	csvPath := scanner.Text()
+	// Создаем приложение Fyne
+	a := app.New()
+	w := a.NewWindow("CSV to Excel Converter")
+	w.Resize(fyne.NewSize(400, 200))
 
+	// Поле для отображения статуса (доступно для копирования)
+	statusEntry := widget.NewEntry()
+	statusEntry.SetText("Перетащите CSV-файл сюда или нажмите кнопку ниже")
+	statusEntry.Disable() // Делаем только для чтения
+	statusEntry.MultiLine = true
+	statusEntry.Wrapping = fyne.TextWrapWord
+
+	// Кнопка для выбора файла
+	selectButton := widget.NewButton("Выбрать CSV-файл", func() {
+		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
+			if err != nil || reader == nil {
+				statusEntry.SetText("Ошибка при выборе файла")
+				return
+			}
+			csvPath := reader.URI().Path()
+			reader.Close()
+			processFile(csvPath, statusEntry)
+		}, w)
+	})
+
+	// Устанавливаем содержимое окна
+	w.SetContent(container.NewVBox(
+		statusEntry,
+		selectButton,
+	))
+
+	// Поддержка drag-and-drop
+	w.SetOnDropped(func(_ fyne.Position, uris []fyne.URI) {
+		if len(uris) > 0 {
+			csvPath := uris[0].Path()
+			processFile(csvPath, statusEntry)
+		}
+	})
+
+	// Запускаем приложение
+	w.ShowAndRun()
+}
+
+// Обработка файла
+func processFile(csvPath string, statusEntry *widget.Entry) {
 	// Открываем CSV файл
 	file, err := os.Open(csvPath)
 	if err != nil {
-		fmt.Printf("Ошибка открытия CSV файла: %v\n", err)
+		statusEntry.SetText(fmt.Sprintf("Ошибка открытия CSV файла: %v", err))
 		return
 	}
 	defer file.Close()
@@ -28,14 +71,21 @@ func main() {
 	// Читаем CSV с разделителем ";"
 	reader := csv.NewReader(file)
 	reader.Comma = ';'
+	reader.LazyQuotes = true
+	reader.TrimLeadingSpace = true // Удаляем ведущие пробелы
 	records, err := reader.ReadAll()
 	if err != nil {
-		fmt.Printf("Ошибка чтения CSV файла: %v\n", err)
+		// Если ошибка парсинга, показываем проблемную строку
+		if parseErr, ok := err.(*csv.ParseError); ok {
+			statusEntry.SetText(fmt.Sprintf("Ошибка парсинга CSV на строке %d, колонке %d: %v\nПроверьте формат файла (разделитель ';', кодировка UTF-8)", parseErr.Line, parseErr.Column, err))
+		} else {
+			statusEntry.SetText(fmt.Sprintf("Ошибка чтения CSV файла: %v", err))
+		}
 		return
 	}
 
 	if len(records) == 0 {
-		fmt.Println("CSV файл пуст")
+		statusEntry.SetText("CSV файл пуст")
 		return
 	}
 
@@ -52,7 +102,6 @@ func main() {
 	for col, header := range records[0] {
 		cell := fmt.Sprintf("%c1", 'A'+col)
 		f.SetCellValue(sheet, cell, header)
-		// Устанавливаем текстовый формат для всего столбца
 		style, _ := f.NewStyle(&excelize.Style{
 			NumFmt: 49, // @ - текстовый формат
 		})
@@ -70,9 +119,9 @@ func main() {
 	// Сохраняем Excel файл
 	outputFile := strings.TrimSuffix(csvPath, ".csv") + ".xlsx"
 	if err := f.SaveAs(outputFile); err != nil {
-		fmt.Printf("Ошибка сохранения Excel файла: %v\n", err)
+		statusEntry.SetText(fmt.Sprintf("Ошибка сохранения Excel файла: %v", err))
 		return
 	}
 
-	fmt.Printf("Файл успешно сохранен как %s\n", outputFile)
+	statusEntry.SetText(fmt.Sprintf("Файл успешно сохранен как %s", outputFile))
 }
