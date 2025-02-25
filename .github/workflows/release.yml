@@ -1,11 +1,34 @@
-name: Build and Release
+name: Build and Deploy Binaries
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "**.yml"
+      - "**.png"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "**.yml"
+      - "**.png"
 
 jobs:
+  get_previous_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      previous_tag: ${{ steps.get_previous_tag_step.outputs.previous_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Чтобы получить историю тегов
+      - name: Get previous tag
+        id: get_previous_tag_step
+        run: echo "previous_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo 'v0.0.0')" >> "$GITHUB_OUTPUT"
+
   build:
     strategy:
       matrix:
@@ -27,13 +50,14 @@ jobs:
             goos: darwin
 
     runs-on: ${{ matrix.os }}
+    needs: get_previous_tag
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
 
@@ -45,23 +69,37 @@ jobs:
           go build -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} main.go
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}
           path: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+          if-no-files-found: error
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
+      - name: Create release body file
+        run: |
+          echo "Release v1.0.${{ github.run_number }} by ${{ github.event.head_commit.author.name }}" > release_body.md
+          echo "" >> release_body.md
+          echo "## Changes" >> release_body.md
+          echo "Automated build from commit ${{ github.sha }}" >> release_body.md
+
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
+          name: Release v1.0.${{ github.run_number }}
+          tag_name: v1.0.${{ github.run_number }}
+          body_path: release_body.md
           files: |
             artifacts/csv-to-excel-linux-amd64/csv-to-excel-linux-amd64
             artifacts/csv-to-excel-darwin-amd64/csv-to-excel-darwin-amd64
