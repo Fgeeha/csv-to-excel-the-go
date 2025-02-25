@@ -6,14 +6,12 @@ on:
       - main
     paths-ignore:
       - "**.md"
-      - "**.yml"
       - "**.png"
   pull_request:
     branches:
       - main
     paths-ignore:
       - "**.md"
-      - "**.yml"
       - "**.png"
 
 jobs:
