@@ -4,15 +4,21 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**'
+      - '.github/workflows/**'
     paths-ignore:
-      - "**.md"
-      - "**.png"
+      - '**.md'
+      - '**.png'
   pull_request:
     branches:
       - main
+    paths:
+      - '**'
+      - '.github/workflows/**'
     paths-ignore:
-      - "**.md"
-      - "**.png"
+      - '**.md'
+      - '**.png'
 
 jobs:
   get_previous_tag:
@@ -22,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Чтобы получить историю тегов
+          fetch-depth: 0
       - name: Get previous tag
         id: get_previous_tag_step
         run: echo "previous_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo 'v0.0.0')" >> "$GITHUB_OUTPUT"
