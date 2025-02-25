@@ -8,7 +8,7 @@ This is a simple Go application that converts a CSV file (semicolon-separated, U
 - Cross-platform: binaries available for Linux, macOS, and Windows (7, 10, 11).
 
 ## Usage
-1. Download the appropriate binary from the [Releases](https://github.com/username/csv-to-excel/releases) page.
+1. Download the appropriate binary from the [Releases](https://github.com/fgeeha/csv-to-excel/releases) page.
 2. Run the program:
    ```bash
    ./csv-to-excel
