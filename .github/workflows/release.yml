@@ -44,19 +44,21 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev
+          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev
 
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew install gcc
-          brew install libpng  # Для рендеринга GUI в fyne
+          brew install libpng
+          brew install glfw  # Устанавливаем GLFW для OpenGL
           xcode-select --install || true # Устанавливаем Xcode CLI, если не установлено
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           choco install mingw -y
+          choco install glfw -y  # Устанавливаем GLFW для Windows
         env:
           CHOCOLATEY_CACHE: "C:\\ProgramData\\chocolatey\\cache"
 
