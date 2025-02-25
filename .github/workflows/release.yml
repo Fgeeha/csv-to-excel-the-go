@@ -50,6 +50,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew install gcc
+          brew install libpng  # Для рендеринга GUI в fyne
           xcode-select --install || true # Устанавливаем Xcode CLI, если не установлено
 
       - name: Install dependencies (Windows)
@@ -59,15 +60,24 @@ jobs:
         env:
           CHOCOLATEY_CACHE: "C:\\ProgramData\\chocolatey\\cache"
 
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Download Go modules
         run: go mod download
 
-      - name: Build
+      - name: Build with verbose output
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          go build -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} main.go
+          go build -v -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} main.go || (echo "Build failed" && exit 1)
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -106,4 +116,4 @@ jobs:
             artifacts/csv-to-excel-darwin-amd64/csv-to-excel-darwin-amd64
             artifacts/csv-to-excel-windows-amd64/csv-to-excel-windows-amd64.exe
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
