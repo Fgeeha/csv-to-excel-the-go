@@ -4,18 +4,12 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '**'
-      - '.github/workflows/**'
     paths-ignore:
       - '**.md'
       - '**.png'
   pull_request:
     branches:
       - main
-    paths:
-      - '**'
-      - '.github/workflows/**'
     paths-ignore:
       - '**.md'
       - '**.png'
