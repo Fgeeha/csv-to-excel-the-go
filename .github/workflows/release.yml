@@ -2,31 +2,10 @@ name: Build and Deploy Binaries
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '**.png'
-  pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '**.png'
+    tags:
+      - 'v*'
 
 jobs:
-  get_previous_tag:
-    runs-on: ubuntu-latest
-    outputs:
-      previous_tag: ${{ steps.get_previous_tag_step.outputs.previous_tag }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Get previous tag
-        id: get_previous_tag_step
-        run: echo "previous_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo 'v0.0.0')" >> "$GITHUB_OUTPUT"
-
   build:
     strategy:
       matrix:
@@ -48,7 +27,6 @@ jobs:
             goos: darwin
 
     runs-on: ${{ matrix.os }}
-    needs: get_previous_tag
 
     steps:
       - name: Checkout code
@@ -87,7 +65,7 @@ jobs:
 
       - name: Create release body file
         run: |
-          echo "Release v1.0.${{ github.run_number }} by ${{ github.event.head_commit.author.name }}" > release_body.md
+          echo "Release ${{ github.ref_name }} by ${{ github.event.head_commit.author.name }}" > release_body.md
           echo "" >> release_body.md
           echo "## Changes" >> release_body.md
           echo "Automated build from commit ${{ github.sha }}" >> release_body.md
@@ -95,12 +73,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release v1.0.${{ github.run_number }}
-          tag_name: v1.0.${{ github.run_number }}
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           body_path: release_body.md
           files: |
             artifacts/csv-to-excel-linux-amd64/csv-to-excel-linux-amd64
             artifacts/csv-to-excel-darwin-amd64/csv-to-excel-darwin-amd64
             artifacts/csv-to-excel-windows-amd64/csv-to-excel-windows-amd64.exe
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
