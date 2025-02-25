@@ -40,6 +40,28 @@ jobs:
         with:
           go-version: '1.24'
 
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install gcc
+          xcode-select --install || true # Устанавливаем Xcode CLI, если не установлено
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install mingw -y
+        env:
+          CHOCOLATEY_CACHE: "C:\\ProgramData\\chocolatey\\cache"
+
+      - name: Download Go modules
+        run: go mod download
+
       - name: Build
         env:
           GOOS: ${{ matrix.goos }}
