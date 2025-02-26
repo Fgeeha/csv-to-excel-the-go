@@ -48,10 +48,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev
-          # Установка кросс-компилятора и библиотек для ARM64
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           sudo apt-get install -y libfreetype6-dev libharfbuzz-dev
-          # Установка ARM64-версий графических библиотек
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev:arm64 libx11-dev:arm64 libxrandr-dev:arm64 libxxf86vm-dev:arm64 libxi-dev:arm64 libxcursor-dev:arm64 libglfw3-dev:arm64
 
       - name: Install dependencies (Windows)
@@ -88,7 +88,6 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
           CC: ${{ matrix.goarch == 'arm64' && 'aarch64-linux-gnu-gcc' || 'gcc' }}
-          # Указываем пути к ARM64 библиотекам
           CGO_LDFLAGS: ${{ matrix.goarch == 'arm64' && '-L/usr/lib/aarch64-linux-gnu -lGL -lX11 -lXrandr -lXxf86vm -lXi -lXcursor' || '' }}
           PKG_CONFIG_PATH: ${{ matrix.goarch == 'arm64' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
         run: |
