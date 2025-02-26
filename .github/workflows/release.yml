@@ -12,14 +12,27 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        goos: [linux, windows]
-        goarch: [amd64]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
         exclude:
+          # Исключаем неподдерживаемые комбинации
           - os: ubuntu-latest
             goos: windows
+          - os: ubuntu-latest
+            goos: darwin
           - os: windows-latest
             goos: linux
+          - os: windows-latest
+            goos: darwin
+          - os: macos-latest
+            goos: linux
+          - os: macos-latest
+            goos: windows
+          # Исключаем arm64 для Windows, так как не поддерживается в текущем окружении
+          - os: windows-latest
+            goos: windows
+            goarch: arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -37,6 +50,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev
+          # Поддержка разных дистрибутивов обеспечивается через glibc, дополнительные пакеты не требуются
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -44,6 +58,14 @@ jobs:
           choco install mingw -y
         env:
           CHOCOLATEY_CACHE: "C:\\ProgramData\\chocolatey\\cache"
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install gcc
+          brew install libpng
+          brew install glfw
+          xcode-select --install || true # Устанавливаем Xcode CLI
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -64,7 +86,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
+          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
         shell: bash
 
       - name: Build with verbose output (Windows)
@@ -77,6 +99,16 @@ jobs:
           go build -v -ldflags "-H=windowsgui -X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}.exe main.go
           if ($LASTEXITCODE -ne 0) { Write-Output "Build failed"; exit 1 }
         shell: pwsh
+
+      - name: Build with verbose output (macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+        run: |
+          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
+        shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -112,6 +144,9 @@ jobs:
           body_path: release_body.md
           files: |
             artifacts/csv-to-excel-linux-amd64-v${{ github.ref_name }}/csv-to-excel-linux-amd64-v${{ github.ref_name }}
+            artifacts/csv-to-excel-linux-arm64-v${{ github.ref_name }}/csv-to-excel-linux-arm64-v${{ github.ref_name }}
             artifacts/csv-to-excel-windows-amd64-v${{ github.ref_name }}/csv-to-excel-windows-amd64-v${{ github.ref_name }}.exe
+            artifacts/csv-to-excel-darwin-amd64-v${{ github.ref_name }}/csv-to-excel-darwin-amd64-v${{ github.ref_name }}
+            artifacts/csv-to-excel-darwin-arm64-v${{ github.ref_name }}/csv-to-excel-darwin-arm64-v${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
