@@ -92,7 +92,7 @@ jobs:
           CGO_LDFLAGS: ${{ matrix.goarch == 'arm64' && '-L/usr/lib/aarch64-linux-gnu -lGL -lX11 -lXrandr -lXxf86vm -lXi -lXcursor' || '' }}
           PKG_CONFIG_PATH: ${{ matrix.goarch == 'arm64' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
         run: |
-          go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
+          go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
         shell: bash
 
       - name: Build with verbose output (Windows)
@@ -102,7 +102,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -x -ldflags "-H=windowsgui -X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}.exe main.go
+          go build -v -x -ldflags "-H=windowsgui -X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}.exe main.go
           if ($LASTEXITCODE -ne 0) { Write-Output "Build failed"; exit 1 }
         shell: pwsh
 
@@ -113,14 +113,14 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
+          go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}
-          path: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+          name: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}
+          path: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}${{ matrix.goos == 'windows' && '.exe' || '' }}
           if-no-files-found: error
 
   release:
@@ -149,10 +149,10 @@ jobs:
           tag_name: ${{ github.ref_name }}
           body_path: release_body.md
           files: |
-            artifacts/csv-to-excel-linux-amd64-v${{ github.ref_name }}/csv-to-excel-linux-amd64-v${{ github.ref_name }}
-            artifacts/csv-to-excel-linux-arm64-v${{ github.ref_name }}/csv-to-excel-linux-arm64-v${{ github.ref_name }}
-            artifacts/csv-to-excel-windows-amd64-v${{ github.ref_name }}/csv-to-excel-windows-amd64-v${{ github.ref_name }}.exe
-            artifacts/csv-to-excel-darwin-amd64-v${{ github.ref_name }}/csv-to-excel-darwin-amd64-v${{ github.ref_name }}
-            artifacts/csv-to-excel-darwin-arm64-v${{ github.ref_name }}/csv-to-excel-darwin-arm64-v${{ github.ref_name }}
+            artifacts/csv-to-excel-linux-amd64-${{ github.ref_name }}/csv-to-excel-linux-amd64-${{ github.ref_name }}
+            artifacts/csv-to-excel-linux-arm64-${{ github.ref_name }}/csv-to-excel-linux-arm64-${{ github.ref_name }}
+            artifacts/csv-to-excel-windows-amd64-${{ github.ref_name }}/csv-to-excel-windows-amd64-${{ github.ref_name }}.exe
+            artifacts/csv-to-excel-darwin-amd64-${{ github.ref_name }}/csv-to-excel-darwin-amd64-${{ github.ref_name }}
+            artifacts/csv-to-excel-darwin-arm64-${{ github.ref_name }}/csv-to-excel-darwin-arm64-${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
