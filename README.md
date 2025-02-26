@@ -9,6 +9,4 @@ This is a simple Go application that converts a CSV file (semicolon-separated, U
 
 ## Usage
 1. Download the appropriate binary from the [Releases](https://github.com/Fgeeha/csv-to-excel-the-go/releases) page.
-2. Run the program:
-   ```bash
-   ./csv-to-excel
+2. Use it:
