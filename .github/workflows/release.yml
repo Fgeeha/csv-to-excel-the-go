@@ -57,17 +57,26 @@ jobs:
       - name: Download Go modules
         run: go mod download
 
-      - name: Build with verbose output
+      - name: Build with verbose output (Linux)
+        if: matrix.os == 'ubuntu-latest'
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            go build -v -ldflags "-H=windowsgui" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}.exe main.go || (echo "Build failed" && exit 1)
-          else
-            go build -v -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }} main.go || (echo "Build failed" && exit 1)
-          fi
+          go build -v -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }} main.go || (echo "Build failed" && exit 1)
+        shell: bash
+
+      - name: Build with verbose output (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+        run: |
+          go build -v -ldflags "-H=windowsgui" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}.exe main.go
+          if ($LASTEXITCODE -ne 0) { Write-Output "Build failed"; exit 1 }
+        shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
