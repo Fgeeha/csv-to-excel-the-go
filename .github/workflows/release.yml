@@ -64,7 +64,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
+          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
         shell: bash
 
       - name: Build with verbose output (Windows)
