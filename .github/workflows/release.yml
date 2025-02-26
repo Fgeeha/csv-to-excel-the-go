@@ -16,7 +16,6 @@ jobs:
         goos: [linux, windows, darwin]
         goarch: [amd64, arm64]
         exclude:
-          # Исключаем неподдерживаемые комбинации
           - os: ubuntu-latest
             goos: windows
           - os: ubuntu-latest
@@ -29,7 +28,6 @@ jobs:
             goos: linux
           - os: macos-latest
             goos: windows
-          # Исключаем arm64 для Windows, так как не поддерживается в текущем окружении
           - os: windows-latest
             goos: windows
             goarch: arm64
@@ -49,8 +47,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev
-          # Поддержка разных дистрибутивов обеспечивается через glibc, дополнительные пакеты не требуются
+          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libfreetype6-dev libharfbuzz-dev
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -65,7 +62,12 @@ jobs:
           brew install gcc
           brew install libpng
           brew install glfw
-          xcode-select --install || true # Устанавливаем Xcode CLI
+          xcode-select --install || true
+
+      - name: Clean go.sum
+        run: |
+          rm -f go.sum
+          go mod tidy
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -85,8 +87,9 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
+          CC: ${{ matrix.goarch == 'arm64' && 'aarch64-linux-gnu-gcc' || 'gcc' }}
         run: |
-          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
+          go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
         shell: bash
 
       - name: Build with verbose output (Windows)
@@ -96,7 +99,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -ldflags "-H=windowsgui -X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}.exe main.go
+          go build -v -x -ldflags "-H=windowsgui -X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}.exe main.go
           if ($LASTEXITCODE -ne 0) { Write-Output "Build failed"; exit 1 }
         shell: pwsh
 
@@ -107,7 +110,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
+          go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
         shell: bash
 
       - name: Upload artifact
