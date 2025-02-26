@@ -5,7 +5,7 @@ This is a simple Go application that converts a CSV file (semicolon-separated, U
 ## Features
 - Converts CSV files with semicolon (`;`) delimiters to Excel.
 - Preserves all data as text (no automatic number conversion).
-- Cross-platform: binaries available for Linux, macOS, and Windows (7, 10, 11).
+- Cross-platform: binaries available for Linux, and Windows (7, 10, 11).
 
 ## Usage
 1. Download the appropriate binary from the [Releases](https://github.com/Fgeeha/csv-to-excel-the-go/releases) page.
