@@ -47,7 +47,11 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libfreetype6-dev libharfbuzz-dev
+          sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev
+          # Устанавливаем кросс-компилятор и зависимости для ARM64
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          # Устанавливаем дополнительные библиотеки для fyne на ARM64
+          sudo apt-get install -y libfreetype6-dev libharfbuzz-dev
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -63,20 +67,6 @@ jobs:
           brew install libpng
           brew install glfw
           xcode-select --install || true
-
-      - name: Clean go.sum (Linux/macOS)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: |
-          rm -f go.sum
-          go mod tidy
-        shell: bash
-
-      - name: Clean go.sum (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          if (Test-Path go.sum) { Remove-Item -Path go.sum -Force }
-          go mod tidy
-        shell: pwsh
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -96,6 +86,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
+          # Указываем кросс-компилятор для ARM64
           CC: ${{ matrix.goarch == 'arm64' && 'aarch64-linux-gnu-gcc' || 'gcc' }}
         run: |
           go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
