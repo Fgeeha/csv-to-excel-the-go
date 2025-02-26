@@ -48,9 +48,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc libgl1-mesa-dev xorg-dev libglfw3-dev
-          # Устанавливаем кросс-компилятор и зависимости для ARM64
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          # Устанавливаем дополнительные библиотеки для fyne на ARM64
           sudo apt-get install -y libfreetype6-dev libharfbuzz-dev
 
       - name: Install dependencies (Windows)
@@ -86,7 +84,6 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
-          # Указываем кросс-компилятор для ARM64
           CC: ${{ matrix.goarch == 'arm64' && 'aarch64-linux-gnu-gcc' || 'gcc' }}
         run: |
           go build -v -x -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
