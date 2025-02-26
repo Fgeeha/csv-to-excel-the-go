@@ -64,7 +64,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }} main.go || (echo "Build failed" && exit 1)
+          go build -v -ldflags "-X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }} main.go || (echo "Build failed" && exit 1)
         shell: bash
 
       - name: Build with verbose output (Windows)
@@ -74,15 +74,15 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 1
         run: |
-          go build -v -ldflags "-H=windowsgui" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}.exe main.go
+          go build -v -ldflags "-H=windowsgui -X main.version=${{ github.ref_name }}" -o csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}.exe main.go
           if ($LASTEXITCODE -ne 0) { Write-Output "Build failed"; exit 1 }
         shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+          name: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}
+          path: csv-to-excel-${{ matrix.goos }}-${{ matrix.goarch }}-v${{ github.ref_name }}${{ matrix.goos == 'windows' && '.exe' || '' }}
           if-no-files-found: error
 
   release:
@@ -111,7 +111,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           body_path: release_body.md
           files: |
-            artifacts/csv-to-excel-linux-amd64/csv-to-excel-linux-amd64
-            artifacts/csv-to-excel-windows-amd64/csv-to-excel-windows-amd64.exe
+            artifacts/csv-to-excel-linux-amd64-v${{ github.ref_name }}/csv-to-excel-linux-amd64-v${{ github.ref_name }}
+            artifacts/csv-to-excel-windows-amd64-v${{ github.ref_name }}/csv-to-excel-windows-amd64-v${{ github.ref_name }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}

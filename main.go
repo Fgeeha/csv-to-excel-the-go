@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -17,6 +18,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/xuri/excelize/v2"
 )
+
+const version = "1.0.3" // Локальная версия, заменяется в GitHub Actions через -ldflags
 
 func main() {
 	// Создаем приложение Fyne
@@ -125,6 +128,24 @@ func main() {
 	w.ShowAndRun()
 }
 
+// Генерация уникального имени файла
+func getUniqueFileName(basePath string) string {
+	outputFile := basePath
+	ext := filepath.Ext(outputFile)
+	base := strings.TrimSuffix(outputFile, ext)
+	counter := 1
+
+	for {
+		_, err := os.Stat(outputFile)
+		if os.IsNotExist(err) {
+			break
+		}
+		outputFile = fmt.Sprintf("%s(%d)%s", base, counter, ext)
+		counter++
+	}
+	return outputFile
+}
+
 // Обработка файла
 func processFile(csvPath string, statusEntry *widget.Entry, method string,
 	semicolonCheck, tabCheck, commaCheck, spaceCheck, customCheck *widget.Check,
@@ -141,7 +162,6 @@ func processFile(csvPath string, statusEntry *widget.Entry, method string,
 	reader.TrimLeadingSpace = true
 
 	if method == "С разделителями" {
-		// Проверяем, выбран ли хотя бы один разделитель
 		if !semicolonCheck.Checked && !tabCheck.Checked && !commaCheck.Checked && !spaceCheck.Checked && !customCheck.Checked {
 			statusEntry.SetText("Ошибка: Выберите хотя бы один разделитель")
 			return
@@ -151,7 +171,6 @@ func processFile(csvPath string, statusEntry *widget.Entry, method string,
 			return
 		}
 
-		// Устанавливаем первый выбранный разделитель (если несколько, берем первый)
 		if semicolonCheck.Checked {
 			reader.Comma = ';'
 		} else if tabCheck.Checked {
@@ -172,7 +191,6 @@ func processFile(csvPath string, statusEntry *widget.Entry, method string,
 			statusEntry.SetText("Ошибка: Укажите ширины полей")
 			return
 		}
-		// Пока не реализуем фиксированную ширину полностью, только читаем как есть
 		reader.FieldsPerRecord = -1 // Отключаем проверку количества полей
 	}
 
@@ -215,7 +233,8 @@ func processFile(csvPath string, statusEntry *widget.Entry, method string,
 		}
 	}
 
-	outputFile := strings.TrimSuffix(csvPath, ".csv") + ".xlsx"
+	// Проверяем и генерируем уникальное имя файла
+	outputFile := getUniqueFileName(strings.TrimSuffix(csvPath, ".csv") + ".xlsx")
 	if err := f.SaveAs(outputFile); err != nil {
 		statusEntry.SetText(fmt.Sprintf("Ошибка сохранения Excel файла: %v", err))
 		return
