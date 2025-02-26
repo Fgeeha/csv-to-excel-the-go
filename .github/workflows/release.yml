@@ -64,10 +64,19 @@ jobs:
           brew install glfw
           xcode-select --install || true
 
-      - name: Clean go.sum
+      - name: Clean go.sum (Linux/macOS)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           rm -f go.sum
           go mod tidy
+        shell: bash
+
+      - name: Clean go.sum (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          if (Test-Path go.sum) { Remove-Item -Path go.sum -Force }
+          go mod tidy
+        shell: pwsh
 
       - name: Cache Go modules
         uses: actions/cache@v3
